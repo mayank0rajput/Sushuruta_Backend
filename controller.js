@@ -4,7 +4,7 @@ import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { ChatGroq } from "@langchain/groq";
 import { StringOutputParser } from '@langchain/core/output_parsers';
 
-const menuItems = [
+export const menuItems = [
   { name: "Kishmish / Raisen", variety: "Popular (250 gm)", quantity: "250 gm", price: "₹120" },
   { name: "Kishmish / Raisen", variety: "Popular (500 gm)", quantity: "500 gm", price: "₹250" },
   { name: "Kishmish / Raisen", variety: "Premium", quantity: "250 gm", price: "₹380" },

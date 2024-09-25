@@ -3,6 +3,8 @@ import Groq from 'groq-sdk';
 import express from 'express';
 import {chatOrder} from './controller.js'
 import cors from 'cors';
+import { items } from './items.js';
+
 
 const app = express();
 const PORT = 8000;
@@ -17,3 +19,4 @@ app.post('/api/order',chatOrder);
 app.get('/',(req,res)=> {
   res.send('Server is rujnnig')
 })
+app.get('/api/items',items)
