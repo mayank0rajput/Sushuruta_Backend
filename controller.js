@@ -5,25 +5,20 @@ import { ChatGroq } from "@langchain/groq";
 import { StringOutputParser } from '@langchain/core/output_parsers';
 
 export const menuItems = [
-  { name: "Kishmish / Raisen", variety: "Popular (250 gm)", quantity: "250 gm", price: "₹120" },
-  { name: "Kishmish / Raisen", variety: "Popular (500 gm)", quantity: "500 gm", price: "₹250" },
-  { name: "Kishmish / Raisen", variety: "Premium", quantity: "250 gm", price: "₹380" },
-  { name: "Khumani", variety: "", quantity: "500 gm", price: "₹280" },
-  { name: "Kali Kishmish", variety: "", quantity: "500 gm", price: "₹320" },
-  { name: "Munnaca -v1", variety: "", quantity: "500 gm", price: "₹320" },
-  { name: "Munnaca -v3", variety: "", quantity: "500 gm", price: "₹350" },
-  { name: "Anjeer", variety: "", quantity: "250 gm", price: "₹350" }
+  { id: 1, name: "Kishmish / Raisen", variety: "Popular (250 gm)", size: "250 gm", price: "₹120", image: "/assets/images/kishmish.png" }, 
+  { id: 2, name: "Kishmish / Raisen", variety: "Popular (500 gm)", size: "500 gm", price: "₹250", image: "/assets/images/kishmish.png" },
+  { id: 3, name: "Kishmish / Raisen", variety: "Premium", size: "250 gm", price: "₹380", image: "/assets/images/kishmish.png" },
+  { id: 4, name: "Khumani", variety: "Premium", size: "500 gm", price: "₹280", image: "/assets/images/khumani.png" },
+  { id: 5, name: "Kali Kishmish", variety: "Premium", size: "500 gm", price: "₹320", image: "/assets/images/blackraisin.png" },
+  { id: 6, name: "Munnaca -v1", variety: "Premium", size: "500 gm", price: "₹320", image: "/assets/images/munakka.png" },
+  { id: 7, name: "Munnaca -v3", variety: "Premium", size: "500 gm", price: "₹350", image: "/assets/images/munakka.png" },
+  { id: 8, name: "Anjeer", variety: "Premium", size: "250 gm", price: "₹350", image: "/assets/images/anjeer.png" }
+  
 ];
 
 const outputParser = new StringOutputParser();
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const chatModel = new ChatGroq({ model: "llama-3.1-70b-versatile", temperature: 0, });
-
-export async function main() {
-  const chatCompletion = await getGroqChatCompletion();
-  // Print the completion returned by the LLM.
-  console.log(chatCompletion.choices[0]?.message?.content || "");
-}
 
 
 let status = "continue";
@@ -101,6 +96,22 @@ export const chatOrder = async (req, res) => {
     res.status(500).json({ error });
   }
 }
+
+export const confirmOrder = async (req,res) => {
+  const orderStatement = `You've already ordered 1 packet of Anjeer (250 gm - ₹350) and 1 packet of Kishmish / Raisen (Premium) (250 gm - ₹380). \n\nSo, your total order is: \n- 1 x Anjeer (250 gm) = ₹350\n- 1 x Kishmish / Raisen (Premium) (250 gm) = ₹380\n\nTotal: ₹730 \n\nIs there anything else you'd like to add to your order?`
+
+  try {
+     // Replace all occurrences of \n with an empty string
+     const cleanedOrderStatement = orderStatement.replace(/\n/g, " ");
+     //  System prompt 
+
+
+     const prompt = ChatPromptTemplate.fromMessages()
+  }
+  catch{
+
+  }
+};
 
 // (async () => {
 //   const result = await chatOrder();
