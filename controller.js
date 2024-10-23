@@ -3,17 +3,18 @@ import Groq from 'groq-sdk';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { ChatGroq } from "@langchain/groq";
 import { StringOutputParser } from '@langchain/core/output_parsers';
+import { cleanAndParseJson } from './utils/cleanAndParse.js';
 
 export const menuItems = [
-  { id: 1, name: "Kishmish / Raisen", variety: "Popular (250 gm)", size: "250 gm", price: "₹120", image: "/assets/images/kishmish.png" }, 
-  { id: 2, name: "Kishmish / Raisen", variety: "Popular (500 gm)", size: "500 gm", price: "₹250", image: "/assets/images/kishmish.png" },
-  { id: 3, name: "Kishmish / Raisen", variety: "Premium", size: "250 gm", price: "₹380", image: "/assets/images/kishmish.png" },
-  { id: 4, name: "Khumani", variety: "Premium", size: "500 gm", price: "₹280", image: "/assets/images/khumani.png" },
-  { id: 5, name: "Kali Kishmish", variety: "Premium", size: "500 gm", price: "₹320", image: "/assets/images/blackraisin.png" },
-  { id: 6, name: "Munnaca -v1", variety: "Premium", size: "500 gm", price: "₹320", image: "/assets/images/munakka.png" },
-  { id: 7, name: "Munnaca -v3", variety: "Premium", size: "500 gm", price: "₹350", image: "/assets/images/munakka.png" },
-  { id: 8, name: "Anjeer", variety: "Premium", size: "250 gm", price: "₹350", image: "/assets/images/anjeer.png" }
-  
+  { id: 1, name: "Kishmish / Raisen", variety: "Popular (250 gm)", size: "250 gm", price: "120", image: "/assets/images/kishmish.png" },
+  { id: 2, name: "Kishmish / Raisen", variety: "Popular (500 gm)", size: "500 gm", price: "250", image: "/assets/images/kishmish.png" },
+  { id: 3, name: "Kishmish / Raisen", variety: "Premium", size: "250 gm", price: "380", image: "/assets/images/kishmish.png" },
+  { id: 4, name: "Khumani", variety: "Premium", size: "500 gm", price: "280", image: "/assets/images/khumani.png" },
+  { id: 5, name: "Kali Kishmish", variety: "Premium", size: "500 gm", price: "320", image: "/assets/images/blackraisin.png" },
+  { id: 6, name: "Munnaca -v1", variety: "Premium", size: "500 gm", price: "320", image: "/assets/images/munakka.png" },
+  { id: 7, name: "Munnaca -v3", variety: "Premium", size: "500 gm", price: "350", image: "/assets/images/munakka.png" },
+  { id: 8, name: "Anjeer", variety: "Premium", size: "250 gm", price: "350", image: "/assets/images/anjeer.png" }
+
 ];
 
 const outputParser = new StringOutputParser();
@@ -28,8 +29,8 @@ let userHasInteracted = false;
 const menuDescription = menuItems.map(item => `${item.name} (${item.variety}): ${item.quantity} - ${item.price}`).join(", ");
 
 export const chatOrder = async (req, res) => {
- 
-  const {userPrompt} = req.body;
+
+  const { userPrompt } = req.body;
 
   try {
 
@@ -49,7 +50,7 @@ export const chatOrder = async (req, res) => {
     if (status == 'end') {
       history.push(["user", userPrompt]);  // storing in history 
       // Adjusting the system prompt with specific instructions
-      const summaryPrompt = `You are a helpful shopkeeper at a dry fruits store. Here’s your inventory: ${menuItems.map(item => item.name).join(", ")}. When asked, provide item prices, recommend popular or premium varieties, or explain health benefits. Be concise and polite.`;
+      const summaryPrompt = `You're now going to summarize the order based on the conversation. It's crucial to use the exact names from the menu: ${menuItems.map(item => item.name).join(", ")}. Refer to these items by their specific names and match with the order, when summarizing the order. Please provide the summary as item, quantity, and price of each item and then end the conversation.`;
 
       history.push(["system", summaryPrompt]);
 
@@ -58,13 +59,11 @@ export const chatOrder = async (req, res) => {
       const llmChain = prompt.pipe(chatModel).pipe(outputParser); // 
       const response = await llmChain.invoke({ input: userPrompt });
       console.log("When the convo ends: ", JSON.stringify(response));
-      // history.push(["system",response.toString()]);
-      // console.log(JSON.stringify(history,null,2));
       // Empty the conversation
       history = [];
       console.log(status)
       res.status(200).json({ response, status });
-    } 
+    }
     else {
 
       if (userHasInteracted) {
@@ -97,24 +96,41 @@ export const chatOrder = async (req, res) => {
   }
 }
 
-export const confirmOrder = async (req,res) => {
-  const orderStatement = `You've already ordered 1 packet of Anjeer (250 gm - ₹350) and 1 packet of Kishmish / Raisen (Premium) (250 gm - ₹380). \n\nSo, your total order is: \n- 1 x Anjeer (250 gm) = ₹350\n- 1 x Kishmish / Raisen (Premium) (250 gm) = ₹380\n\nTotal: ₹730 \n\nIs there anything else you'd like to add to your order?`
+export const confirmOrder = async (req, res) => {
+  const { orderStatement } = req.body;
 
   try {
-     // Replace all occurrences of \n with an empty string
-     const cleanedOrderStatement = orderStatement.replace(/\n/g, " ");
-     //  System prompt 
+    const menu = JSON.stringify(menuItems);
+    // without lanchain
+    const chatCompletion = await groq.chat.completions.create({
+      "messages": [
+        {
+          "role": "system",
+          "content": `You are given an order summary and a menu with specific items, each having an ID, name, variety, size, and price. Your task is to extract the ordered items, their quantities, and their prices from the order summary and match them to the exact IDs from the provided menu. ${menu} `
+        },
+        {
+          "role": "user",
+          "content": `# Please return ONLY the array of objects, where each object has:\n            - \"item-id\": exact \"id\" of the item from the menu\n            - \"quantity\": the number of times the item appears in the order summary  \n         - \"price\": the price of the item from the menu (numeric, no currency symbols)      Strictly return only the JSON array of objects, no additional text. call it items. orderStatement: ${orderStatement}  `
+        }
+      ],
+      "model": "gemma2-9b-it",
+      "temperature": 0.2,
+      "max_tokens": 1024,
+      "top_p": 1,
+      "stream": false,
+      "response_format": {
+        "type": "json_object"
+      },
+      "stop": null
+    });
+    console.log(chatCompletion.choices[0].message.content);
+    const response = JSON.parse(chatCompletion.choices[0].message.content);
+  
+    res.status(200).json(response);
 
-
-     const prompt = ChatPromptTemplate.fromMessages()
-  }
-  catch{
-
+  } catch (error) {
+    // Log and handle any errors that occur during the process
+    console.log(error);
+    res.status(500).json({ error: error.message });
   }
 };
-
-// (async () => {
-//   const result = await chatOrder();
-//   console.log(result);  // This will now properly log the resolved value
-// })();
-

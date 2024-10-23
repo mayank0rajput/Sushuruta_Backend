@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import Groq from 'groq-sdk';
 import express from 'express';
-import {chatOrder} from './controller.js'
+import {chatOrder, confirmOrder} from './controller.js'
 import cors from 'cors';
 import { items } from './items.js';
 
@@ -15,7 +15,7 @@ app.use('/assets/images', express.static('assets/images'));
 app.listen(PORT, ()=>{
   console.log(`Server started at port ${PORT} .`);
 });
-
+app.post('/api/confirm',confirmOrder);
 app.post('/api/order',chatOrder);
 app.get('/',(req,res)=> {
   res.send('Server is rujnnig')
