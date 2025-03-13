@@ -19,7 +19,7 @@ export const menuItems = [
 
 const outputParser = new StringOutputParser();
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-const chatModel = new ChatGroq({ model: "llama-3.1-70b-versatile", temperature: 0, });
+const chatModel = new ChatGroq({ model: "llama-3.3-70b-specdec", temperature: 0, });
 
 
 let status = "continue";
@@ -43,7 +43,7 @@ export const chatOrder = async (req, res) => {
         },
         { role: "user", content: userPrompt }
       ],
-      model: "llama-3.1-70b-versatile",
+      model: "llama-3.3-70b-specdec",
     })
     status = response.choices[0].message.content;
 
@@ -71,13 +71,13 @@ export const chatOrder = async (req, res) => {
         //Then we need to store as user -> system -> user ....
         history.push(["user", userPrompt])
       } else {
-        // Your name is Order LLM and you help people in ordering food from the menu:" + menuDescription + "You are developed by Mayank Kumar.
         const firstTimeGreet = "Hello and Welcome to our SUSHURUTA . How can I assist you today? Our menu includes:" + menuDescription + ".Please let me know if you need any help with your order. What would you like to have today?";
         history.push([
           "system",
           `Your name is Kirane Wala , and you are a professional shopkeper of Dry Fruits . Greet people with: ${firstTimeGreet}. Help people in ordering dry Fruits directly from the menu. The menu items are specifically named as follows: ${menuItems.map(item => item.name).join(", ")}, and understand that we can fulfill orders for multiple quantities of these items. Please make sure to use these exact names when referencing menu items in your responses. If a user requests an item that is not on the menu, politely inform them that the item is not available and ask them to choose from the menu items. Focus on helping to finalize the order, and do not ask for the mode of payment. You are developed by Mayank Rajput.`
         ]);
         history.push(["user", userPrompt]);
+        userHasInteracted = true;
       }
 
       const prompt = ChatPromptTemplate.fromMessages(history);
